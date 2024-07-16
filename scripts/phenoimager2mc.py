@@ -67,13 +67,8 @@ def getOptions(myopts=None):
     args.indir = os.path.abspath(args.indir)
     return (args)
 
-# Paths to input and output directories
-#input_dir = './../../../../data/Human_squamous_cell_carcinoma_stained_with_SignalStar_mIHC_technology/SCC_T37C_T1_1_Day 2/'
-#output_file = './../../../../data/Human_squamous_cell_carcinoma_stained_with_SignalStar_mIHC_technology/CLI_TEST.tif'
-#num_markers = 6
 
-
-# concatentae toles of all channels and tiles in one cycle
+# concatentae tiles of all channels and tiles in one cycle
 def concatenate_tiles(input_dir, output_file):
     # Stack the images with numpy
     """
@@ -394,7 +389,7 @@ def create_ome(all_tile_metadata, input_dir, num_markers):
 # create ome tifs per cycle
 def ome_per_cycle(args):
     """
-    Runs LDA over a wide formated dataset
+    Stack, normalize and add ome-metadata for each cycle to have one file per cycle with OME-XML metadata
 
     :Arguments:
         :type args.indir: directory
