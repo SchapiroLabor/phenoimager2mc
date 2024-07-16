@@ -22,6 +22,7 @@ import copy
 import platform
 from uuid import uuid4
 from ome_types import to_xml
+from skimage import util
 
 
 def getOptions(myopts=None):
@@ -142,7 +143,9 @@ def normalize_image(output_file):
         img_normalized[:,
                        ch, :][img_normalized[:,
                                              ch, :] > 1] = 1  # Cap values at 1
-
+    img_normalized = util.img_as_uint(img_normalized)
+    # print the max value of the normalized image
+    print("Max value of the normalized image: ", np.max(img_normalized))
     # Save the converted image
     tiff.imwrite(output_file, img_normalized)
 
@@ -387,7 +390,7 @@ def create_ome(all_tile_metadata, input_dir, num_markers):
 
 
 # create ome tifs per cycle
-def ome_per_cycle(args):
+def main(args):
     """
     Stack, normalize and add ome-metadata for each cycle to have one file per cycle with OME-XML metadata
 
@@ -418,43 +421,49 @@ def ome_per_cycle(args):
         all_tile_metadata.append(tile_metadata)
 
     # Create OME-XML metadata
+    #if not os.path.exists(args.outdir):
+    #    os.makedirs(args.outdir)
+
+    #index = 1
+    #base_name = os.path.basename(args.indir)
+    #output_filename = args.outdir + base_name + "_cycle" + str(index) + ".tif"
     create_ome(all_tile_metadata, args.outdir, args.num_markers)
 
-# main function
-def main(args):
-    """
-    Loops ome_per_cycle function over all folders in the input directory
+#  function to go one folder structure higher
+# def main(args):
+#     """
+#     Loops ome_per_cycle function over all folders in the input directory
 
-    :Arguments:
-        :type args.indir: directory
-        :param args.indir: Input directory containing folders per cycle with .tif files.
+#     :Arguments:
+#         :type args.indir: directory
+#         :param args.indir: Input directory containing folders per cycle with .tif files.
 
-        :type args.outdir: directory
-        :param args.outdir: directory to save the output .tif files per cycle with OME-XML metadata. Will be created if not existent.
-        
-    """
-    #loop the ome_per_cycle function per folder in the input path
-    input_base = args.indir
-    output_base = args.outdir
+#         :type args.outdir: directory
+#         :param args.outdir: directory to save the output .tif files per cycle with OME-XML metadata. Will be created if not existent.
 
-    # Create ome_output directory within the specified output path if it doesn't exist
-    if not os.path.exists(output_base):
-        os.makedirs(output_base)
+#     """
+#loop the ome_per_cycle function per folder in the input path
+# input_base = args.indir
+# output_base = args.outdir
 
-    index = 0
-    for folder in sorted(os.listdir(input_base)):
-        subfolder_path = os.path.join(input_base, folder)
+# # Create ome_output directory within the specified output path if it doesn't exist
+# if not os.path.exists(output_base):
+#     os.makedirs(output_base)
 
-        if os.path.isdir(subfolder_path):  # Check if it is a directory
-            # name output like foldername with _cycle1.tif as extension
-            index = index + 1
-            args.indir = subfolder_path
-            output_filename = folder + "_cycle" + str(index) + ".tif"
-            output_filename = output_filename.replace(' ',
-                                                      '_').replace('\t', '_')
-            args.outdir = os.path.join(output_base, output_filename)
-            print(args.outdir)
-            ome_per_cycle(args)
+# index = 0
+# for folder in sorted(os.listdir(input_base)):
+#     subfolder_path = os.path.join(input_base, folder)
+
+#     if os.path.isdir(subfolder_path):  # Check if it is a directory
+#         # name output like foldername with _cycle1.tif as extension
+#         index = index + 1
+#         args.indir = subfolder_path
+#         output_filename = folder + "_cycle" + str(index) + ".tif"
+#         output_filename = output_filename.replace(' ',
+#                                                   '_').replace('\t', '_')
+#         args.outdir = os.path.join(output_base, output_filename)
+#         print(args.outdir)
+#         ome_per_cycle(args)
 
 
 if __name__ == '__main__':
