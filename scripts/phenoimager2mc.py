@@ -1,13 +1,21 @@
-# CLI for converting PhenoImager data to MCMICRO format
+#!/usr/bin/env python
+########################################################################################################
+# AUTHOR: Chiara Schiller <chiara.schiller@uni-heidelberg.de>
+# DESCRIPTION: Convert PhenoImager output .tif tiles to a single .tif file with correct OME-XML metadata
+########################################################################################################
 
 import os
 import numpy as np
+
+import argparse
+import warnings
+from argparse import RawDescriptionHelpFormatter
+
 import tifffile as tiff
 from PIL import Image
 import xml.etree.ElementTree as ET
 import ome_types
 from ome_types.model import OME,Instrument,Pixels,TiffData,Channel,Plane,Pixels_DimensionOrder
-#from ome_types.model import TiffData, Plane, Channel, Pixels, Image, OME
 from ome_types.model.simple_types import PixelsID
 from ome_types.model.pixels import DimensionOrder
 import copy
@@ -15,20 +23,73 @@ import platform
 from uuid import uuid4
 from ome_types import to_xml
 
-# parser = argparse.ArgumentParser(
-#                     prog='ProgramName',
-#                     description='What the program does',
-#                     epilog='Text at the bottom of help')
+
+def getOptions(myopts=None):
+    """ Function to pull in arguments """
+    description = """ PhenoImager2MC """
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    # Standard Input
+    standard = parser.add_argument_group(
+        title='Standard Inputs',
+        description='Standard input for staging module.')
+    # provide complete input folder containing subfolders per cycles with tif filed
+    standard.add_argument(
+        "-i",
+        "--indir",
+        dest="indir",
+        action='store',
+        required=True,
+        help="Input folder with .tif files from PhenoImager.")
+    standard.add_argument("-m",
+                          "--num_markers",
+                          dest="num_markers",
+                          action="store",
+                          required=True,
+                          type=int,
+                          help="Provide number of markers in the image.")
+
+    # Tool Output
+    output = parser.add_argument_group(title='Required output')
+    output.add_argument(
+        "-o",
+        "--outdir",
+        dest="outdir",
+        action='store',
+        required=True,
+        help="Output folder, existing or will be newly created.")
+
+    args = parser.parse_args(myopts)
+
+    # Standardize paths
+    args.indir = os.path.abspath(args.indir)
+    return (args)
 
 # Paths to input and output directories
-input_dir = './../../../../data/Human_squamous_cell_carcinoma_stained_with_SignalStar_mIHC_technology/SCC_T37C_T1_1_Day 2/'
-output_file = './../../../../data/Human_squamous_cell_carcinoma_stained_with_SignalStar_mIHC_technology/CLI_TEST.tif'
-num_markers = 6
+#input_dir = './../../../../data/Human_squamous_cell_carcinoma_stained_with_SignalStar_mIHC_technology/SCC_T37C_T1_1_Day 2/'
+#output_file = './../../../../data/Human_squamous_cell_carcinoma_stained_with_SignalStar_mIHC_technology/CLI_TEST.tif'
+#num_markers = 6
 
-#create function concatenate_tiles
+
+# concatentae toles of all channels and tiles in one cycle
 def concatenate_tiles(input_dir, output_file):
     # Stack the images with numpy
+    """
+    Stack all .tif tiles per cycle into a single .tif file
 
+    :Arguments:
+        :type input_dir: folder
+        :param input_dir: Folder with all .tif input tiles in one cycle
+
+        :type output_file: .tif file
+        :param output_file: Stacked .tif file with all input tiles per cycle.
+
+    :Returns:
+        :rtype stacked_image: np.sarray
+        :return scores_df: Stacked image saved as numpy array
+    """
     # Make list of all files with a ".tif" extension in the input directory
     input_files = [
         os.path.join(input_dir, file) for file in os.listdir(input_dir)
@@ -59,14 +120,24 @@ def concatenate_tiles(input_dir, output_file):
     tiff.imsave(output_file, stacked_image)
     return stacked_image
 
-    # Save the stacked image as a TIFF file
-    #tiff.imsave(output_file, stacked_image)
 
 # create function normalize_image
 def normalize_image(output_file):
+    """
+    99th percentile normalization per channel
+
+    :Arguments:
+        :type output_file: np.sarray
+        :param output_file: Stacked image from concatenate_tiles()
+
+    :Returns:
+        :rtype img_normalized: np.sarray
+        :return img_normalized: Normalized image per channel
+    """
     # Initialize an empty array for the normalized image
     # Read the float TIFF
     img = tiff.imread(output_file)
+
     img_normalized = np.empty_like(img, dtype=np.float32)
 
     # Normalize each channel separately
@@ -82,8 +153,20 @@ def normalize_image(output_file):
 
     return img_normalized
 
+# create function extract_metadata
 
-def extract_metadata(tif_file_path, output_file):
+def extract_metadata(tif_file_path):
+    """
+    Extract metadata from PhenoImager corrupted .tif files
+
+    :Arguments:
+        :type tif_file_path: file path
+        :param tif_file_path: File path per tile in one cycle
+
+    :Returns:
+        :rtype metadata_list: list
+        :return metadata_list: List of extracted metadata per tile across channels.
+    """
     # List to store metadata for each page
     metadata_list = []
 
@@ -174,20 +257,29 @@ def extract_metadata(tif_file_path, output_file):
     return metadata_list
 
 
+def create_ome(all_tile_metadata, input_dir, num_markers):
+    """
+    Creates and overwrites correct omexml metadata for the OME-TIFF files
 
-##### THIS COULD BE IN MAIN OR ANOTHER FUNCTION, LETS SEE
+    :Arguments:
+        :type all_tile_metadata: list
+        :param all_tile_metadata: List of extracted metadata per tile across channels from extract_metadata().
 
-#################
+        :type input_dir: directory
+        :param input_dir: input_dir of folder containg all tiles in a cycle.
 
+        :type num_markers: integer
+        :param num_markers: Number of markers in the image.
 
-def create_ome(all_tile_metadata, input_dir):
+    """
     # define markers
     markers = []
     for i in range(0, num_markers):  #TODO do not hardcode here
         marker = all_tile_metadata[0][i]['marker']
         markers.append(marker)
     img_name = "test"
-    no_of_channels = len(all_tile_metadata[0])
+    #no_of_channels = len(all_tile_metadata[0])
+    no_of_channels = args.num_markers
     bits_per_sample = all_tile_metadata[0][0]['bits_per_sample']
     no_of_tiles = len(all_tile_metadata)
     tiff.tiffcomment(input_dir, '')
@@ -296,18 +388,29 @@ def create_ome(all_tile_metadata, input_dir):
     ome_custom.images = img_block
     ome_custom.uuid = uuid4().urn
     ome_xml = to_xml(ome_custom)
-    tiff.tiffcomment(output_file, ome_xml)
+    tiff.tiffcomment(args.outdir, ome_xml)
 
 
-# create main
-def main(input_dir, output_file):
+# create ome tifs per cycle
+def ome_per_cycle(args):
+    """
+    Runs LDA over a wide formated dataset
+
+    :Arguments:
+        :type args.indir: directory
+        :param args.indir: Input directory containing folders per cycle with .tif files.
+
+        :type args.outdir: directory
+        :param args.outdir: directory to save the output .tif files per cycle with OME-XML metadata. Will be created if not existent.
+        
+    """
     # Concatenate the tiles into a single stacked image
-    concatenate_tiles(input_dir, output_file)
+    concatenate_tiles(args.indir, args.outdir)
     # Normalize the image
-    normalize_image(output_file)
+    normalize_image(args.outdir)
     # Extract metadata from the TIFF files
     input_files = [
-        os.path.join(input_dir, file) for file in os.listdir(input_dir)
+        os.path.join(args.indir, file) for file in os.listdir(args.indir)
         if file.endswith('.tif')
     ]
     # Sort the list of files alphabetically
@@ -316,18 +419,53 @@ def main(input_dir, output_file):
     # Process all TIFF files in the input directory
     all_tile_metadata = []
     for tif_file_path in input_files:
-        tile_metadata = extract_metadata(tif_file_path, output_file)
+        tile_metadata = extract_metadata(tif_file_path)
         all_tile_metadata.append(tile_metadata)
 
-    # define markers
-    # markers = []
-    # for i in range(0, num_markers):  #TODO do not hardcode here
-    #     marker = all_tile_metadata[0][i]['marker']
-    #     markers.append(marker)
-
     # Create OME-XML metadata
-    create_ome(all_tile_metadata, output_file)
+    create_ome(all_tile_metadata, args.outdir, args.num_markers)
 
-# Run the main function
+# main function
+def main(args):
+    """
+    Loops ome_per_cycle function over all folders in the input directory
+
+    :Arguments:
+        :type args.indir: directory
+        :param args.indir: Input directory containing folders per cycle with .tif files.
+
+        :type args.outdir: directory
+        :param args.outdir: directory to save the output .tif files per cycle with OME-XML metadata. Will be created if not existent.
+        
+    """
+    #loop the ome_per_cycle function per folder in the input path
+    input_base = args.indir
+    output_base = args.outdir
+
+    # Create ome_output directory within the specified output path if it doesn't exist
+    if not os.path.exists(output_base):
+        os.makedirs(output_base)
+
+    index = 0
+    for folder in sorted(os.listdir(input_base)):
+        subfolder_path = os.path.join(input_base, folder)
+
+        if os.path.isdir(subfolder_path):  # Check if it is a directory
+            # name output like foldername with _cycle1.tif as extension
+            index = index + 1
+            args.indir = subfolder_path
+            output_filename = folder + "_cycle" + str(index) + ".tif"
+            output_filename = output_filename.replace(' ',
+                                                      '_').replace('\t', '_')
+            args.outdir = os.path.join(output_base, output_filename)
+            print(args.outdir)
+            ome_per_cycle(args)
+
+
 if __name__ == '__main__':
-    main(input_dir, output_file)
+    """Tool is called on the command-line"""
+
+    args = getOptions()
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+    main(args)
