@@ -123,11 +123,11 @@ def normalize_image(output_file):
     99th percentile normalization per channel
 
     :Arguments:
-        :type output_file: np.sarray
+        :type output_file: np.array
         :param output_file: Stacked image from concatenate_tiles()
 
     :Returns:
-        :rtype img_normalized: np.sarray
+        :rtype img_normalized: np.array
         :return img_normalized: Normalized image per channel
     """
     # Initialize an empty array for the normalized image
@@ -190,8 +190,6 @@ def extract_metadata(tif_file_path):
                 #"pixel_unit": None,
                 "device_name": None,
                 "no_of_channels": None,
-                "pixel_size" : 20046.2,
-                #"physical_size_y" : 20046.2,
                 "pixel_unit" : "PixelsPerCentimeter",
                 "dpi" : None,
                 "x_physical_size" : None,
@@ -301,12 +299,10 @@ def create_ome(all_tile_metadata, input_dir, num_markers):
                 the_c=ch,
                 the_t=0,
                 the_z=0,
-                position_x=0,  #x=0 is just a place holder
-                position_y=0,  #y=0 is just a place holder
+                position_x=0,
+                position_y=0, 
                 position_z=0,
                 exposure_time=0
-                #position_x_unit=pixel_units,
-                #position_y_unit=pixel_units
             ))
     #--Generate channels block--#
     chann_block = []
@@ -329,9 +325,6 @@ def create_ome(all_tile_metadata, input_dir, num_markers):
         template_chann_block = copy.deepcopy(chann_block)
         template_tiffdata_block = copy.deepcopy(tiff_block)
         for ch, mark in enumerate(markers):
-            #template_plane_block[ch].position_x=int(round(all_tile_metadata[t][0]['x_position']*10000))
-            #template_plane_block[ch].position_y=int(round(all_tile_metadata[t][0]['y_position']*10000))
-            #dont round them and try if ASHLAR can deal with it
             template_plane_block[ch].position_x = all_tile_metadata[t][0][
                 'x_position']  #*10000
             template_plane_block[ch].position_y = all_tile_metadata[t][0][
@@ -356,16 +349,11 @@ def create_ome(all_tile_metadata, input_dir, num_markers):
                 size_y=all_tile_metadata[t][0]['image_length'],
                 size_z=1,
                 type=ome_types.model.pixels.PixelType('uint32'),
-                #type=bit_depth,
                 big_endian=False,
                 channels=template_chann_block,
                 interleaved=False,
                 physical_size_x=all_tile_metadata[t][0]['x_physical_size'],
                 physical_size_y=all_tile_metadata[t][0]['y_physical_size'],
-                #physical_size_x=pixel_size,
-                #physical_size_x_unit=pixel_units,
-                #physical_size_y=pixel_size,
-                #physical_size_y_unit=pixel_units,
                 physical_size_z=1.0,
                 planes=template_plane_block,
                 bits_per_sample=bits_per_sample,
@@ -421,16 +409,11 @@ def main(args):
         all_tile_metadata.append(tile_metadata)
 
     # Create OME-XML metadata
-    #if not os.path.exists(args.outdir):
-    #    os.makedirs(args.outdir)
-
-    #index = 1
-    #base_name = os.path.basename(args.indir)
-    #output_filename = args.outdir + base_name + "_cycle" + str(index) + ".tif"
+    # so far, it just saves in the file path and name the user provides, as we need to adapt that for the raw folder anyways
     create_ome(all_tile_metadata, args.outdir, args.num_markers)
 
 #  function to go one folder structure higher
-# def main(args):
+#   def main(args):
 #     """
 #     Loops ome_per_cycle function over all folders in the input directory
 
