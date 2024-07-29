@@ -3,14 +3,14 @@
 # AUTHOR: Chiara Schiller <chiara.schiller@uni-heidelberg.de>
 # DESCRIPTION: Convert PhenoImager output .tif tiles to a single .tif file with correct OME-XML metadata
 ########################################################################################################
-
-import os
-import numpy as np
-
 import argparse
 import warnings
+import copy
+import platform
 from argparse import RawDescriptionHelpFormatter
+import os
 
+import numpy as np
 import tifffile as tiff
 from PIL import Image
 import xml.etree.ElementTree as ET
@@ -18,8 +18,6 @@ import ome_types
 from ome_types.model import OME,Instrument,Pixels,TiffData,Channel,Plane,Pixels_DimensionOrder
 from ome_types.model.simple_types import PixelsID
 from ome_types.model.pixels import DimensionOrder
-import copy
-import platform
 from uuid import uuid4
 from ome_types import to_xml
 from skimage import util
@@ -300,7 +298,7 @@ def create_ome(all_tile_metadata, input_dir, num_markers):
                 the_t=0,
                 the_z=0,
                 position_x=0,
-                position_y=0, 
+                position_y=0,
                 position_z=0,
                 exposure_time=0
             ))
