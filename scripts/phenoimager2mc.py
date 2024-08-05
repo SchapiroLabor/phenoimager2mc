@@ -50,15 +50,25 @@ def getOptions(myopts=None):
         required=True,
         type=int,
         help="Provide number of markers in the image.")
+    standard.add_argument(
+        "-n",
+        "--normalization",
+        dest="normalization",
+        action="store",
+        required=False,
+        default="99th",
+        choices=["99th", "max"],
+        help="Provide method to normalize marker intensities per channel. Options = [99th, max]")
 
     # Tool Output
     output = parser.add_argument_group(title='Required output')
-    output.add_argument("-o",
-                        "--output",
-                        dest="output",
-                        action='store',
-                        required=True,
-                        help="Output file, existing or will be newly created.")
+    output.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        action='store',
+        required=True,
+        help="Output file, existing or will be newly created.")
 
     args = parser.parse_args(myopts)
 
@@ -136,8 +146,13 @@ def normalize_image(output_file):
 
     # Normalize each channel separately
     for ch in range(img.shape[1]):  # Now channels are the second dimension
-        percentile_99 = np.percentile(img[:, ch, :], 99)
-        img_normalized[:, ch, :] = img[:, ch, :] / percentile_99
+        if args.normalization == "99th":
+            percentile_99 = np.percentile(img[:, ch, :], 99)
+            img_normalized[:, ch, :] = img[:, ch, :] / percentile_99
+
+        elif args.normalization == "max":
+            img_normalized[:, ch, :] = img[:, ch, :] / np.max(img[:, ch, :])
+
         img_normalized[:,
                        ch, :][img_normalized[:,
                                              ch, :] > 1] = 1  # Cap values at 1
