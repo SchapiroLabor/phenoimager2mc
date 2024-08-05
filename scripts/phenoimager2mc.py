@@ -42,23 +42,23 @@ def getOptions(myopts=None):
         action='store',
         required=True,
         help="Input folder with .tif files from PhenoImager.")
-    standard.add_argument("-m",
-                          "--num_markers",
-                          dest="num_markers",
-                          action="store",
-                          required=True,
-                          type=int,
-                          help="Provide number of markers in the image.")
+    standard.add_argument(
+        "-m",
+        "--num_markers",
+        dest="num_markers",
+        action="store",
+        required=True,
+        type=int,
+        help="Provide number of markers in the image.")
 
     # Tool Output
     output = parser.add_argument_group(title='Required output')
-    output.add_argument(
-        "-o",
-        "--outdir",
-        dest="outdir",
-        action='store',
-        required=True,
-        help="Output folder, existing or will be newly created.")
+    output.add_argument("-o",
+                        "--output",
+                        dest="output",
+                        action='store',
+                        required=True,
+                        help="Output file, existing or will be newly created.")
 
     args = parser.parse_args(myopts)
 
@@ -372,7 +372,7 @@ def create_ome(all_tile_metadata, input_dir, num_markers):
     ome_custom.images = img_block
     ome_custom.uuid = uuid4().urn
     ome_xml = to_xml(ome_custom)
-    tiff.tiffcomment(args.outdir, ome_xml)
+    tiff.tiffcomment(args.output, ome_xml)
 
 
 # create ome tifs per cycle
@@ -384,14 +384,14 @@ def main(args):
         :type args.indir: directory
         :param args.indir: Input directory containing folders per cycle with .tif files.
 
-        :type args.outdir: directory
-        :param args.outdir: directory to save the output .tif files per cycle with OME-XML metadata. Will be created if not existent.
+        :type args.output: tif file
+        :param args.output: file to save the output .tif files per cycle with OME-XML metadata. Will be created if not existent.
         
     """
     # Concatenate the tiles into a single stacked image
-    concatenate_tiles(args.indir, args.outdir)
+    concatenate_tiles(args.indir, args.output)
     # Normalize the image
-    normalize_image(args.outdir)
+    normalize_image(args.output)
     # Extract metadata from the TIFF files
     input_files = [
         os.path.join(args.indir, file) for file in os.listdir(args.indir)
@@ -408,7 +408,7 @@ def main(args):
 
     # Create OME-XML metadata
     # so far, it just saves in the file path and name the user provides, as we need to adapt that for the raw folder anyways
-    create_ome(all_tile_metadata, args.outdir, args.num_markers)
+    create_ome(all_tile_metadata, args.output, args.num_markers)
 
 #  function to go one folder structure higher
 #   def main(args):
@@ -419,13 +419,13 @@ def main(args):
 #         :type args.indir: directory
 #         :param args.indir: Input directory containing folders per cycle with .tif files.
 
-#         :type args.outdir: directory
+#         :type args.output: directory
 #         :param args.outdir: directory to save the output .tif files per cycle with OME-XML metadata. Will be created if not existent.
 
 #     """
 #loop the ome_per_cycle function per folder in the input path
 # input_base = args.indir
-# output_base = args.outdir
+# output_base = args.output
 
 # # Create ome_output directory within the specified output path if it doesn't exist
 # if not os.path.exists(output_base):
