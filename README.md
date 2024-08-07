@@ -1,4 +1,4 @@
-# phenoimager2
+# phenoimager2mc
 Formatting PhenoImager .tif output files to be compatible with the MCMCIRO pipeline and ASHLAR.
 
 ## Description
