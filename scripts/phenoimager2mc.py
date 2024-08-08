@@ -65,7 +65,7 @@ def getOptions(myopts=None):
         default="99th",
         choices=["99th", "max"],
         help="Provide method to normalize marker intensities per channel. Options = [99th, max]")
-    standard.add_argument("--version", action="version", version="v0.2.1")
+    standard.add_argument("--version", action="version", version="v0.2.2")
 
     # Tool Output
     output = parser.add_argument_group(title='Required output')
@@ -421,7 +421,7 @@ def main(args):
         
     """
     # version
-    _version = 'v0.2.1'
+    _version = 'v0.2.2'
     # Concatenate the tiles into a single stacked image
     concatenate_tiles(args.indir, args.output)
     # Normalize the image
@@ -490,7 +490,7 @@ def main(args):
 
 if __name__ == '__main__':
     """Tool is called on the command-line"""
-    _version = 'v0.2.1'
+    _version = 'v0.2.2'
     args = getOptions()
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
