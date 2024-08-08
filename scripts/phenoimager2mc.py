@@ -35,13 +35,19 @@ def getOptions(myopts=None):
         title='Standard Inputs',
         description='Standard input for staging module.')
     # provide complete input folder containing subfolders per cycles with tif filed
+    #standard.add_argument(
+    #    "-i",
+    #    "--indir",
+    #    dest="indir",
+    #    action='store',
+    #    required=True,
+    #    help="Input folder with .tif files from PhenoImager.")
     standard.add_argument(
         "-i",
         "--indir",
-        dest="indir",
-        action='store',
+        nargs='+',
         required=True,
-        help="Input folder with .tif files from PhenoImager.")
+        help='Folder name or list of files to process')
     standard.add_argument(
         "-m",
         "--num_markers",
@@ -74,7 +80,7 @@ def getOptions(myopts=None):
     args = parser.parse_args(myopts)
 
     # Standardize paths
-    args.indir = os.path.abspath(args.indir)
+    #args.indir = os.path.abspath(args.indir)
     return (args)
 
 
@@ -95,11 +101,21 @@ def concatenate_tiles(input_dir, output_file):
         :rtype stacked_image: np.sarray
         :return scores_df: Stacked image saved as numpy array
     """
+    print(args.indir)
     # Make list of all files with a ".tif" extension in the input directory
-    input_files = [
+    # Check if the input is a single folder
+    if len(input_dir) == 1:
+        #args.indir = os.path.abspath(args.indir)
+        input_dir = input_dir[0]
+        input_files = [
         os.path.join(input_dir, file) for file in os.listdir(input_dir)
         if file.endswith('.tif')
     ]
+    else:
+        # Treat the input as a list of files
+        input_files = args.indir
+
+    
     # Sort the list of files alphabetically
     input_files = sorted(input_files)
 
@@ -411,10 +427,17 @@ def main(args):
     # Normalize the image
     normalize_image(args.output)
     # Extract metadata from the TIFF files
-    input_files = [
-        os.path.join(args.indir, file) for file in os.listdir(args.indir)
+    if len(args.indir) == 1:
+        #args.indir = os.path.abspath(args.indir)
+        input_dir = args.indir[0]
+        input_files = [
+        os.path.join(input_dir, file) for file in os.listdir(input_dir)
         if file.endswith('.tif')
     ]
+    else:
+        # Treat the input as a list of files
+        input_files = args.indir
+
     # Sort the list of files alphabetically
     input_files = sorted(input_files)
 
