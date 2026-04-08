@@ -1,34 +1,27 @@
 # Use the official micromamba image as a base
-FROM mambaorg/micromamba:latest
-LABEL maintainer="CHiara Schiller"
+FROM mambaorg/micromamba:1.5.10-noble
+LABEL maintainer="Chiara Schiller"
 
-# Set the base layer for micromamba
+# Copy conda environment file
+COPY --chown=$MAMBA_USER:$MAMBA_USER ./environment.yml /tmp/conda.yml
+
+# Install environment
+RUN micromamba install -y -n base -f /tmp/conda.yml \
+    && micromamba install -y -n base conda-forge::procps-ng \
+    && micromamba env export --name base --explicit > environment.lock \
+    && echo ">> CONDA_LOCK_START" \
+    && cat environment.lock \
+    && echo "<< CONDA_LOCK_END" \
+    && micromamba clean -a -y
+
+# Switch to root to copy everything
 USER root
-COPY environment.yml .
 
-# Update package manager and install essential build tools
-RUN apt-get update -qq && apt-get install -y \
-    build-essential \
-    ffmpeg \
-    libsm6 \
-    libxext6 \
-    procps
+# Ensure micromamba binaries are in PATH
+ENV PATH="$MAMBA_ROOT_PREFIX/bin:$PATH"
 
-# Set the environment variable for the root prefix
-ARG MAMBA_ROOT_PREFIX=/opt/conda
-
-# Add /opt/conda/bin to the PATH
-ENV PATH $MAMBA_ROOT_PREFIX/bin:$PATH
-
-# Install dependencies with micromamba, clean afterwards
-RUN micromamba env create -f environment.yml \
-    && micromamba clean --all --yes
-
-# Add environment to PATH
-ENV PATH="/opt/conda/envs/phenoimager2mc/bin:$PATH"
-
-# Set the working directory
-WORKDIR /phenoimager2mc
-
-# Copy contents of the folder to the working directory
+# Copy the rest of the current directory into /app inside the container
+WORKDIR /app
 COPY . .
+
+RUN micromamba run -n base pip install .
