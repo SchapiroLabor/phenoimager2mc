@@ -45,3 +45,40 @@ docker login ghcr.io
 ## Pull container
 docker pull ghcr.io/schapirolabor/phenoimager2mc:latest
 ```
+
+## Installation
+### Option 1: Install from PyPI
+```
+pip install phenoimager2mc
+phenoimager2mc --help
+```
+
+### Option 2: Docker
+Pull the image:
+```
+docker pull ghcr.io/schapirolabor/phenoimager2mc:latest
+```
+and run the tool directly, mounting your input and output directories:
+```
+docker run --rm -v $(pwd):/data ghcr.io/schapirolabor/phenoimager2mc:latest \
+    phenoimager2mc \
+    -i /data/input_dir \
+    -o /data/output.ome.tif \
+    -n 6 \
+    -m 99th
+```
+
+### Option 3: Development/Conda environment
+For development or reproducible research setups:
+```
+git clone https://github.com/SchapiroLabor/phenoimager2mc.git
+cd Background_subtraction
+conda env create -f environment.yml
+conda activate phenoimager2mc_env
+
+pip install -e .
+```
+run
+```
+phenoimager2mc --help
+```

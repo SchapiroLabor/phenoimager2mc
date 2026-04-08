@@ -6,14 +6,11 @@ name: Docker
 # documentation.
 
 on:
-  #schedule:
-    #- cron: '24 12 * * *'
-  push:
-    branches: [ "main" ]
-    # Publish semver tags as releases.
-    tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ "main" ]
+  
+  release:
+    types: [ published ]
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -36,6 +33,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # Enable QEMU for cross-platform builds
+      # https://github.com/docker/setup-qemu-action
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
@@ -76,8 +78,8 @@ jobs:
         uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

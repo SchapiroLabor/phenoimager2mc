@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phenoimager2mc"
+dynamic = ["version"]
+description = "Convert PhenoImager output .tif tiles to a single OME-TIFF with correct metadata"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Chiara Schiller", email = "chiara.schiller@uni-heidelberg.de" },
+]
+requires-python = ">=3.10"
+keywords = ["multiplexed", "PhenoImager", "OME-TIFF", "MCMICRO"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "numpy",
+    "tifffile==2024.7.24",
+    "scikit-image",
+    "pillow",
+    "ome-types",
+    "imagecodecs",
+]
+
+[project.scripts]
+phenoimager2mc = "phenoimager2mc.main:cli"
+
+[project.urls]
+Homepage = "https://github.com/schapirolabor/phenoimager2mc"
+
+[tool.setuptools.dynamic]
+version = { attr = "phenoimager2mc._version.__version__" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["phenoimager2mc"]
